@@ -21,6 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata = {
   title: "Launchpad - AI-Powered College Applications",
   description: "Your all-in-one platform for global university applications",
+  icons: {
+    icon: "/assets/fav.png",
+  },
 };
 
 export default function RootLayout({ children }) {
