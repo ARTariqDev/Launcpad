@@ -20,6 +20,8 @@ export default function SignUp() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     AOS.init({
@@ -27,15 +29,71 @@ export default function SignUp() {
       once: true,
       easing: "ease-out",
     });
-  }, []);
+
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session");
+        const data = await response.json();
+
+        if (data.authenticated) {
+          const redirectTo = data.user.role === "admin" ? "/admin" : "/dashboard";
+          router.push(redirectTo);
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Sign up:", formData);
+    setLoading(true);
+    setError("");
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        router.push(data.redirectTo);
+        router.refresh();
+      } else {
+        setError(data.error || "Signup failed");
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,6 +140,19 @@ export default function SignUp() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" data-aos="fade-up" data-aos-delay="100">
+          {error && (
+            <div
+              className="px-4 py-3 rounded-md border-2"
+              style={{
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                borderColor: "rgba(239, 68, 68, 0.5)",
+                color: "#ef4444",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label
@@ -274,7 +345,7 @@ export default function SignUp() {
           <div className="pt-4 w-full">
             <div className="w-full">
               <Button
-                text="Create Account"
+                text={loading ? "Creating Account..." : "Create Account"}
                 color="#ffffff"
                 textColor="#000000"
                 glowColor="#000000"

@@ -17,7 +17,24 @@ export default function Home() {
       once: true,
       easing: "ease-out",
     });
-  }, []);
+
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session");
+        const data = await response.json();
+
+        if (data.authenticated) {
+          const redirectTo = data.user.role === "admin" ? "/admin" : "/dashboard";
+          router.push(redirectTo);
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden" style={{ backgroundColor: 'var(--primary-bg)', fontFamily: 'var(--font-body)' }}>

@@ -15,6 +15,8 @@ export default function Login() {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     AOS.init({
@@ -22,15 +24,58 @@ export default function Login() {
       once: true,
       easing: "ease-out",
     });
-  }, []);
+
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session");
+        const data = await response.json();
+
+        if (data.authenticated) {
+          const redirectTo = data.user.role === "admin" ? "/admin" : "/dashboard";
+          router.push(redirectTo);
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login:", formData);
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        router.push(data.redirectTo);
+        router.refresh();
+      } else {
+        setError(data.error || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,6 +122,19 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" data-aos="fade-up" data-aos-delay="100">
+          {error && (
+            <div
+              className="px-4 py-3 rounded-md border-2"
+              style={{
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                borderColor: "rgba(239, 68, 68, 0.5)",
+                color: "#ef4444",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           <div>
             <label
               htmlFor="usernameOrEmail"
@@ -146,7 +204,7 @@ export default function Login() {
           <div className="pt-4 w-full">
             <div className="w-full">
               <Button
-                text="Sign In"
+                text={loading ? "Signing In..." : "Sign In"}
                 color="#ffffff"
                 textColor="#000000"
                 glowColor="#000000"
