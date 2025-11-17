@@ -46,7 +46,14 @@ export default function ProfileInsights({ profile }) {
         return;
       }
 
-      setAnalysis(data.analysis);
+      const analysisData = {
+        ...data.analysis,
+        overallScore: typeof data.analysis.overallScore === 'number' 
+          ? data.analysis.overallScore 
+          : parseFloat(data.analysis.overallScore) || 0
+      };
+      
+      setAnalysis(analysisData);
       
       if (data.cached) {
         setUpdateMessage('Using cached analysis - no changes detected');
@@ -251,7 +258,9 @@ export default function ProfileInsights({ profile }) {
             fontFamily: "var(--font-display)"
           }}
         >
-          {analysis.overallScore.toFixed(1)}
+          {typeof analysis.overallScore === 'number' 
+            ? analysis.overallScore.toFixed(1) 
+            : parseFloat(analysis.overallScore || 0).toFixed(1)}
         </div>
         <p className="text-xl" style={{ color: "var(--text-primary)" }}>
           out of 10

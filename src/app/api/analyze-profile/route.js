@@ -268,7 +268,7 @@ IMPORTANT:
       };
       
       const scores = Object.values(finalAnalysis.scores);
-      finalAnalysis.overallScore = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+      finalAnalysis.overallScore = parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1));
       
       if (!shouldUpdateContext) {
         console.log('Partial update complete - scores updated, context preserved');
